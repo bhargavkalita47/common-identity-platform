@@ -70,7 +70,7 @@ async function handler(req:NextRequest,ctx:Context) {
  // Supabase's established email infrastructure delivers a sign-in link to the invitee.
  const origin=process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
  const redirect=new URL('/auth/finish',origin);redirect.searchParams.set('next','/invite/'+invitation.token);
- const mail=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,{auth:{persistSession:false,autoRefreshToken:false}});
+ const mail=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,flowType:'implicit'}});
  const {error}=await mail.auth.signInWithOtp({email:data.email,options:{emailRedirectTo:redirect.toString(),shouldCreateUser:true}});
  return json({id:invitation.id,invite_url:new URL('/invite/'+invitation.token,origin).toString(),email_sent:!error,warning:error?'Invitation created. Email delivery failed; copy the invitation link. Check SMTP configuration and Auth email limits.':null},201);
  }
