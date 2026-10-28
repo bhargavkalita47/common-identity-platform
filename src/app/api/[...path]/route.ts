@@ -37,6 +37,18 @@ async function handler(req:NextRequest,ctx:Context) {
  if(method==='GET')return json(unwrap(await client.rpc('account_sessions')));
  if(method==='DELETE'){uuid.parse(org);unwrap(await client.rpc('revoke_session',{p_session:org}));return json({ok:true});}
  }
+ if(area==='invitation' && method==='GET'){
+ const token=z.string().regex(/^[a-f0-9]{64}$/).parse(req.nextUrl.searchParams.get('token'));
+ return json(unwrap(await client.rpc('invitation_identity',{p_token:token})));
+ }
+ if(area==='invitation' && org==='password' && method==='POST'){
+ const data=z.object({token:z.string().regex(/^[a-f0-9]{64}$/),password:z.string().min(12).max(128)}).parse(body);
+ const identity=unwrap(await client.rpc('invitation_identity',{p_token:data.token})) as {email:string};
+ if(identity.email.toLowerCase()!==user.email?.toLowerCase())throw new HttpError(403,'The signed-in account does not match this invitation.');
+ const result=await client.auth.updateUser({password:data.password});
+ if(result.error)throw new HttpError(400,result.error.message);
+ return json({ok:true});
+ }
  if(area==='invitation' && method==='POST'){
  const data=z.object({token:z.string().regex(/^[a-f0-9]{64}$/),decision:z.enum(['accept','decline'])}).parse(body);
  return json({organization_id:unwrap(await client.rpc('respond_invitation',{p_token:data.token,p_decision:data.decision}))});
